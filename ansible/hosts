@@ -1,0 +1,2 @@
+[web_apache]
+apache1 ansible_host=18.205.247.109

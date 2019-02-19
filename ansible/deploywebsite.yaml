@@ -1,0 +1,15 @@
+---
+- name: Install Apache
+  hosts: web_apache
+  become: yes
+
+  tasks:
+    
+    - name: Copy files with
+      copy: src={{ item }} dest={{ apache_root_folder }} mode=0555
+      with_fileglob: "{{ website_source_folder }}/*"
+      notify: Restart Apache
+
+  handlers:
+    - name: Restart Apache
+      service: name=httpd state=restarted

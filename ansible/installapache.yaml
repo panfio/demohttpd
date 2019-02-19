@@ -1,0 +1,29 @@
+---
+- name: Install Apache
+  hosts: web_apache
+  become: yes
+
+  tasks:
+
+    - name: Install Apache
+      yum: name=httpd state=latest
+
+    - name: Enable Apache
+      service: name=httpd state=started enabled=yes
+
+    - name: Create apache's root folder
+      file:
+        path: "{{ apache_root_folder }}"
+        state: directory
+
+    - name: Change apache's root directory
+      lineinfile:
+        path: "{{ apache_conf_rhel }}"
+        regexp: '^DocumentRoot '
+        insertafter: '^#DocumentRoot '
+        line: 'DocumentRoot "{{ apache_root_folder }}"'
+      notify: Restart Apache
+
+  handlers:
+    - name: Restart Apache
+      service: name=httpd state=restarted
