@@ -1,24 +1,34 @@
-$Server = "8.8.8.8"
-$CurrentDirectory = Get-Location 
-$LogPath = "$($CurrentDirectory)\pinglog.csv"
-$WarningsLogPath = "$($CurrentDirectory)\warnings.log"
+[CmdletBinding()]
+Param (
+    
+    [int32]$Timeout = 2,
+    [String]$Server = "64.233.165.101",
+    [string]$LogPath = "$(Get-Location)\pinglog.csv",
+    [string]$WarningsLogPath = "$(Get-Location)\warnings.log",
+    [int32]$RowCount = 10,
+    [int32]$RespTime = 30,
+    [int32]$FailureCount = 5,
+    [int32]$SlowCount = 5
+)
 
-$Timeout = 2
-$RowCount = 10
-Write-Host "Количество строк: $($RowCount)"
-$RespTime = 35
-Write-Host "Допустимое время ответа: $($RespTime)ms"
-$FailureCount = 5
-Write-Host "Допустимое количетво потерь пакетов: $($FailureCount)"
-$SlowCount = 5 #
-Write-Host "Допустимое количетво медленных: $($FailureCount)"
+[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("cp866")
+Write-Host "РљРѕР»РёС‡РµСЃС‚РІРѕ СЃС‚СЂРѕРє: $($RowCount)"
+Write-Host "Р”РѕРїСѓСЃС‚РёРјРѕРµ РІСЂРµРјСЏ РѕС‚РІРµС‚Р°: $($RespTime)ms"
+Write-Host "Р”РѕРїСѓСЃС‚РёРјРѕРµ РєРѕР»РёС‡РµС‚РІРѕ РїРѕС‚РµСЂСЊ РїР°РєРµС‚РѕРІ: $($FailureCount)"
+Write-Host "Р”РѕРїСѓСЃС‚РёРјРѕРµ РєРѕР»РёС‡РµС‚РІРѕ РјРµРґР»РµРЅРЅС‹С…: $($FailureCount)"
 
 If (-not (Test-Path (Split-Path $LogPath) -PathType Container)){    New-Item (Split-Path $LogPath) -ItemType Directory | Out-Null	}
+If (-not (Test-Path (Split-Path $WarningsLogPath) -PathType Container)){    New-Item (Split-Path $WarningsLogPath) -ItemType Directory | Out-Null	}
 If (-not (Test-Path $LogPath)) {	Add-Content -Value '"TimeStamp","Source","Destination","IPV4Address","Status","ResponseTime"' -Path $LogPath	}
 $Ping = @()
 While ($true){   
-	$Ping = Get-WmiObject Win32_PingStatus -Filter "Address = '$Server'" | Select @{Label="TimeStamp";Expression={Get-Date}},@{Label="Source";Expression={ $_.__Server }},@{Label="Destination";Expression={ $_.Address }},IPv4Address,@{Label="Status";Expression={ If ($_.StatusCode -ne 0) {"Failed"} Else {"Ok"}}},ResponseTime
-    $Result = $Ping | Select TimeStamp,Source,Destination,IPv4Address,Status,ResponseTime | ConvertTo-Csv -NoTypeInformation
+	try{
+		$Ping = Get-WmiObject Win32_PingStatus -Filter "Address = '$Server'" | Select @{Label="TimeStamp";Expression={Get-Date}},@{Label="Source";Expression={ $_.__Server }},@{Label="Destination";Expression={ $_.Address }},IPv4Address,@{Label="Status";Expression={ If ($_.StatusCode -ne 0) {"Failed"} Else {"Ok"}}},ResponseTime
+    }
+	catch {
+	
+	}
+	$Result = $Ping | Select TimeStamp,Source,Destination,IPv4Address,Status,ResponseTime | ConvertTo-Csv -NoTypeInformation
     $Result[1] | Add-Content -Path $LogPath
 	
 	$TmpFailureCount = 0
@@ -34,10 +44,10 @@ While ($true){
 		}
     }
 	If ($FailureCount -lt $TmpFailureCount) {
-		"$(Get-Date) Потеряно $($TmpFailureCount) пакетов за последние $($Timeout * $RowCount) секунд" | Add-Content -Path $WarningsLogPath
+		"$(Get-Date) РџРѕС‚РµСЂСЏРЅРѕ $($TmpFailureCount) РїР°РєРµС‚РѕРІ Р·Р° РїРѕСЃР»РµРґРЅРёРµ $($Timeout * $RowCount) СЃРµРєСѓРЅРґ" | Add-Content -Path $WarningsLogPath
 	}
 	If ($SlowCount -lt $TmpSlowCount) {
-		"$(Get-Date) Время отклика более $($RespTime)ms за последние $($Timeout * $RowCount) секунд" | Add-Content -Path $WarningsLogPath
+		"$(Get-Date) Р’СЂРµРјСЏ РѕС‚РєР»РёРєР° Р±РѕР»РµРµ $($RespTime)ms Р·Р° РїРѕСЃР»РµРґРЅРёРµ $($Timeout * $RowCount) СЃРµРєСѓРЅРґ" | Add-Content -Path $WarningsLogPath
 	}
     Start-Sleep -Seconds $Timeout
 }
