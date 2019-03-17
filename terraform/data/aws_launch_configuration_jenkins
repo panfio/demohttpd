@@ -1,0 +1,28 @@
+#!/bin/bash
+sudo yum-config-manager --enable "Red Hat Enterprise Linux Server 7 Extra(RPMs)"
+sudo curl http://pkg.jenkins-ci.org/redhat/jenkins.repo > /etc/yum.repos.d/jenkins.repo && \
+   sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo yum update -y
+sudo yum install java-1.8.0-openjdk java-1.8.0-openjdk-devel zip unzip git ansible jenkins -y
+sudo systemctl start jenkins.service && sudo systemctl enable jenkins.service
+
+sudo yum install docker -y && \
+   sudo systemctl enable docker && sudo systemctl start docker
+INSECURE_REGISTRY=$(curl http://169.254.169.254/latest/meta-data/public-ipv4) && \
+cat <<EOF >/etc/docker/daemon.json
+{
+  "insecure-registries" : [ "${INSECURE_REGISTRY}" ]
+}
+EOF
+sudo systemctl restart docker
+mkdir -p /opt/registry/data
+docker run -d --restart unless-stopped -p 5000:5000 \
+    -v /opt/registry/data:/var/lib/registry \
+    --name registry registry:2
+docker run -d --restart unless-stopped -p 8500:8500 consul
+rm -rf /tmp/terraform* && \
+   curl -L https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip -o /tmp/terraform.zip && \
+   unzip /tmp/terraform.zip -d /tmp && \
+   sudo cp /tmp/terraform /usr/bin && \
+   sudo chmod +x /usr/bin/terraform &&\
+   rm -rf /tmp/terraform*
