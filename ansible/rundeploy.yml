@@ -1,0 +1,20 @@
+---
+ - hosts: web
+   hosts: web_docker
+   become: yes
+
+   tasks:
+     - name: Stop container
+       shell: docker stop website
+       ignore_errors: yes
+
+     - name: Rm container
+       shell: docker rm -f website
+       ignore_errors: yes
+
+     - name: Remove image
+       shell: "docker rmi {{ docker_registry }}:5000/website:latest"
+       ignore_errors: yes
+
+     - name: Run image on server
+       shell: "docker run -d --name --restart unless-stopped website -p 80:8080 {{ docker_registry }}:5000/website:latest"
