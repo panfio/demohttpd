@@ -1,0 +1,11 @@
+#!/bin/bash
+sudo yum-config-manager --enable "Red Hat Enterprise Linux Server 7 Extra(RPMs)"
+sudo yum update -y
+sudo yum install docker -y && \
+   sudo systemctl enable docker && sudo systemctl start docker
+cat <<EOF >/etc/docker/daemon.json
+{
+  "insecure-registries" : [ "myregistry:5000" ]
+}
+EOF
+sudo systemctl restart docker

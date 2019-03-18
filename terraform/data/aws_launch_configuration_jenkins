@@ -8,13 +8,16 @@ sudo systemctl start jenkins.service && sudo systemctl enable jenkins.service
 
 sudo yum install docker -y && \
    sudo systemctl enable docker && sudo systemctl start docker
-INSECURE_REGISTRY=$(curl http://169.254.169.254/latest/meta-data/public-ipv4) && \
-cat <<EOF >/etc/docker/daemon.json
+INSECURE_REGISTRY=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
+sudo echo "${INSECURE_REGISTRY} myregistry" >> /etc/hosts
+sudo cat <<EOF >/etc/docker/daemon.json
 {
-  "insecure-registries" : [ "${INSECURE_REGISTRY}" ]
+  "insecure-registries" : [ "http://${INSECURE_REGISTRY}:5000" ],
+  "experimental" : true
 }
 EOF
 sudo systemctl restart docker
+sudo groupadd docker && sudo usermod -aG docker ec2-user
 mkdir -p /opt/registry/data
 docker run -d --restart unless-stopped -p 5000:5000 \
     -v /opt/registry/data:/var/lib/registry \
@@ -26,3 +29,4 @@ rm -rf /tmp/terraform* && \
    sudo cp /tmp/terraform /usr/bin && \
    sudo chmod +x /usr/bin/terraform &&\
    rm -rf /tmp/terraform*
+sudo reboot
