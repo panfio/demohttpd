@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-service
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: myminikube.info
+    http:
+        paths:
+          - path: /
+            backend:
+              serviceName: demo1-cluster-ip-service
+              servicePort: 80
